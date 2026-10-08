@@ -160,6 +160,7 @@ RETURNS TABLE (
     calc_closing NUMERIC(14,2)
 )
 LANGUAGE sql
+SET search_path = public
 AS $$
 WITH apartments AS (
     SELECT apartment_number FROM saldo WHERE EXTRACT(YEAR FROM period) = p_year
@@ -169,7 +170,7 @@ WITH apartments AS (
 months AS (
     SELECT generate_series(1,12)::INT AS month_no
 ),
-rows AS (
+month_rows AS (
     SELECT a.apartment_number,
            m.month_no,
            make_date(p_year,m.month_no,1) AS month_start,
@@ -180,7 +181,7 @@ rows AS (
            NULLIF(GREATEST(
                COALESCE(s.updated_at,'-infinity'::timestamptz),
                COALESCE((SELECT MAX(GREATEST(c.created_at,c.updated_at)) FROM charges c WHERE c.apartment_number=a.apartment_number AND c.period=make_date(p_year,m.month_no,1)),'-infinity'::timestamptz),
-               COALESCE((SELECT MAX(GREATEST(p.created_at,p.updated_at,payment_time::timestamp)) FROM payments p WHERE p.apartment_number=a.apartment_number AND p.period=make_date(p_year,m.month_no,1)),'-infinity'::timestamptz)
+               COALESCE((SELECT MAX(GREATEST(p.created_at,p.updated_at,make_timestamp(CAST(EXTRACT(YEAR FROM p.period) AS INT),CAST(EXTRACT(MONTH FROM p.period) AS INT),1,0,0,0)+p.payment_time)) FROM payments p WHERE p.apartment_number=a.apartment_number AND p.period=make_date(p_year,m.month_no,1)),'-infinity'::timestamptz)
            ),'-infinity'::timestamptz) AS action_at,
            (SELECT s0.opening_balance FROM saldo s0
              WHERE s0.apartment_number=a.apartment_number AND s0.period < make_date(p_year,1,1)
@@ -219,7 +220,7 @@ calc AS (
            r.month_start,
            r.chain_opening,
            r.chain_closing_next
-    FROM rows r
+    FROM month_rows r
 )
 SELECT apartment_number,
        MIN(opening_balance) OVER (PARTITION BY apartment_number) AS year_opening,
@@ -246,7 +247,7 @@ SELECT apartment_number,
                                         THEN total_before
                                         ELSE total_before - (charges_total - payments_total) END,
                     0)
-           + charges_total - payments_total, 2)::NUMERIC(14,2) AS calc_closing
+           + charges_total - payments_total), 2)::NUMERIC(14,2) AS calc_closing
 FROM calc
 ORDER BY apartment_number, month_no;
 $$;
@@ -266,40 +267,37 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH base AS (
-SELECT gs::INT,
-       make_date(p_year,gs::INT,1),
+SELECT gs::INT AS month_no,
+       make_date(p_year,gs::INT,1) AS month_start,
        s.opening_balance,
-       COALESCE((SELECT SUM(c.amount) FROM charges c WHERE c.apartment_number=p_apartment AND c.period=make_date(p_year,gs::INT,1)),0)::NUMERIC(14,2),
-       COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.apartment_number=p_apartment AND p.period=make_date(p_year,gs::INT,1)),0)::NUMERIC(14,2),
+       COALESCE((SELECT SUM(c.amount) FROM charges c WHERE c.apartment_number=p_apartment AND c.period=make_date(p_year,gs::INT,1)),0)::NUMERIC(14,2) AS charges_total,
+       COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.apartment_number=p_apartment AND p.period=make_date(p_year,gs::INT,1)),0)::NUMERIC(14,2) AS payments_total,
        s.closing_balance,
        NULLIF(GREATEST(
            COALESCE(s.updated_at,'-infinity'::timestamptz),
            COALESCE((SELECT MAX(GREATEST(c.created_at,c.updated_at)) FROM charges c WHERE c.apartment_number=p_apartment AND c.period=make_date(p_year,gs::INT,1)),'-infinity'::timestamptz),
-           COALESCE((SELECT MAX(GREATEST(p.created_at,p.updated_at)) FROM payments p WHERE p.apartment_number=p_apartment AND p.period=make_date(p_year,gs::INT,1)),'-infinity'::timestamptz)
-       ),'-infinity'::timestamptz),
+           COALESCE((SELECT MAX(GREATEST(p.created_at,p.updated_at,make_timestamp(CAST(EXTRACT(YEAR FROM p.period) AS INT),CAST(EXTRACT(MONTH FROM p.period) AS INT),1,0,0,0)+p.payment_time)) FROM payments p WHERE p.apartment_number=p_apartment AND p.period=make_date(p_year,gs::INT,1)),'-infinity'::timestamptz)
+       ),'-infinity'::timestamptz) AS action_at,
        (SELECT s0.opening_balance FROM saldo s0
          WHERE s0.apartment_number=p_apartment AND s0.period < make_date(p_year,1,1)
-         ORDER BY s0.period DESC LIMIT 1),
+         ORDER BY s0.period DESC LIMIT 1) AS prev_year_opening,
        (SELECT s1.closing_balance + COALESCE((SELECT SUM(c.amount) FROM charges c WHERE c.apartment_number=p_apartment AND c.period > s1.period AND c.period < make_date(p_year,gs::INT,1)),0)
                         - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.apartment_number=p_apartment AND p.period > s1.period AND p.period < make_date(p_year,gs::INT,1)),0)
         FROM saldo s1
         WHERE s1.apartment_number=p_apartment AND s1.period < make_date(p_year,gs::INT,1)
-        ORDER BY s1.period DESC LIMIT 1),
+        ORDER BY s1.period DESC LIMIT 1) AS chain_opening,
        (SELECT s2.opening_balance - COALESCE((SELECT SUM(c.amount) FROM charges c WHERE c.apartment_number=p_apartment AND c.period > make_date(p_year,gs::INT,1) AND c.period < s2.period),0)
                         + COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.apartment_number=p_apartment AND p.period > make_date(p_year,gs::INT,1) AND p.period < s2.period),0)
         FROM saldo s2
         WHERE s2.apartment_number=p_apartment AND s2.period > make_date(p_year,gs::INT,1)
-        ORDER BY s2.period ASC LIMIT 1)
+        ORDER BY s2.period ASC LIMIT 1) AS chain_closing_next
 FROM generate_series(1,12) gs
 LEFT JOIN saldo s ON s.apartment_number=p_apartment AND s.period=make_date(p_year,gs::INT,1)
 ),
 calc AS (
     -- Расчет входящего и исходящего сальдо для каждого месяца ленты квартиры.
     SELECT b.*,
-           b.column8 AS prev_year_opening,
-           b.column9 AS chain_opening,
-           b.column10 AS chain_closing_next,
-           COALESCE(MIN(b.opening_balance) OVER (), MAX(b.column8) OVER ()) AS base_opening,
+           COALESCE(MIN(b.opening_balance) OVER (), MAX(b.prev_year_opening) OVER ()) AS base_opening,
            MIN(b.month_no) FILTER (WHERE b.opening_balance IS NOT NULL) OVER () AS first_saldo_month,
            SUM(b.charges_total - b.payments_total) OVER (ORDER BY b.month_no ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS total_before
     FROM base b
@@ -321,7 +319,7 @@ SELECT month_no, month_start, opening_balance, charges_total, payments_total, cl
                                         THEN total_before
                                         ELSE total_before - (charges_total - payments_total) END,
                     0)
-           + charges_total - payments_total, 2)::NUMERIC(14,2) AS calc_closing
+           + charges_total - payments_total), 2)::NUMERIC(14,2) AS calc_closing
 FROM calc
 ORDER BY month_no;
 $$;
