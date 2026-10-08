@@ -1,0 +1,17 @@
+name: lab3_accounting
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lab3_accounting
+      POSTGRES_USER: lab3
+      POSTGRES_PASSWORD: lab3
+    ports:
+      - "55432:5432"
+    volumes:
+      - lab3_accounting_pgdata:/var/lib/postgresql/data
+
+volumes:
+  lab3_accounting_pgdata:
