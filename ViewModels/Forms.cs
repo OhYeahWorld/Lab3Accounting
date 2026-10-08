@@ -23,6 +23,7 @@ public sealed class PaymentForm
     public int ApartmentNumber { get; set; }
     public DateOnly Period { get; set; }
     public DateOnly PaymentDate { get; set; }
+    public TimeOnly? PaymentTime { get; set; }
     public decimal Amount { get; set; }
     public string? PaymentReference { get; set; }
 }
