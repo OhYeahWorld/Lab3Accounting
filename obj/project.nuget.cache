@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "Sj4uCGU+A+E=",
+  "success": true,
+  "projectFilePath": "/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Lab3Accounting.csproj",
+  "expectedPackageFiles": [
+    "/Users/ajdamir/.nuget/packages/npgsql/8.0.9/npgsql.8.0.9.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,21 @@
+@model Lab3Accounting.ViewModels.HomeViewModel
+@{ ViewData["Title"] = "Обзор"; }
+<section class="hero">
+    <div><span class="eyebrow">Лицевые счета · данные готовы</span><h2>Начисления, платежи и сальдо в одной системе</h2><p>Три рабочие таблицы и три отчетных модуля. Цепочка сальдо контролируется автоматически: исходящее одного периода становится входящим следующего.</p></div>
+    <div class="hero-action"><a class="button light" asp-controller="Reports" asp-action="Turnover">Открыть отчет →</a></div>
+</section>
+<div class="metric-grid">
+ <div class="metric"><small>Сальдо</small><strong>@Model.SaldoCount</strong><span>месячных записей</span></div>
+ <div class="metric"><small>Начисления</small><strong>@Model.ChargesCount</strong><span>операций</span></div>
+ <div class="metric"><small>Платежи</small><strong>@Model.PaymentsCount</strong><span>операций</span></div>
+ <div class="metric"><small>Квартиры</small><strong>@Model.ApartmentCount</strong><span>в данных</span></div>
+</div>
+<div class="split-grid">
+<section class="panel"><div class="panel-head"><div><span class="eyebrow">Быстрые переходы</span><h3>Рабочие таблицы</h3></div></div>
+<div class="quick-grid">
+<a asp-controller="Ledger" asp-action="Saldo"><b>01</b><span>Сальдо</span><small>входящее → исходящее</small></a>
+<a asp-controller="Ledger" asp-action="Charges"><b>02</b><span>Начисления</span><small>период и сумма</small></a>
+<a asp-controller="Ledger" asp-action="Payments"><b>03</b><span>Платежи</span><small>дата и сумма</small></a>
+</div></section>
+<section class="panel accent-panel"><span class="eyebrow">Состояние</span><div class="big-number">@Model.TotalDebtorBalance.ToString("N2") ₽</div><p>Сумма последних доступных сальдо по лицевым счетам.</p><div class="last-action">Последнее действие: @(Model.LastActionAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "—")</div></section>
+</div>

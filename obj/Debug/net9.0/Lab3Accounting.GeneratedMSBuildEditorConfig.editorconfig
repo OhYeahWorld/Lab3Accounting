@@ -1,0 +1,68 @@
+is_global = true
+build_property.TargetFramework = net9.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v9.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = Lab3Accounting
+build_property.RootNamespace = Lab3Accounting
+build_property.ProjectDir = /Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = /Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Home/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9FcnJvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9JbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Ledger/Charges.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTGVkZ2VyL0NoYXJnZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Ledger/Payments.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTGVkZ2VyL1BheW1lbnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Ledger/Saldo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTGVkZ2VyL1NhbGRvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Reports/Apartment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUmVwb3J0cy9BcGFydG1lbnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Reports/Debtors.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUmVwb3J0cy9EZWJ0b3JzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Reports/Turnover.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvUmVwb3J0cy9UdXJub3Zlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ajdamir/Documents/Codes/CSharp/Lab3Accounting/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 

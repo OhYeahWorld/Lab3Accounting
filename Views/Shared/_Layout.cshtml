@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — Жилфонд</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">Ж</span><div><b>Жилфонд</b><small>лицевые счета</small></div></div>
+        <div class="nav-label">Учет</div>
+        <a class="nav-link" asp-controller="Home" asp-action="Index"><span>⌂</span> Обзор</a>
+        <a class="nav-link" asp-controller="Ledger" asp-action="Saldo"><span>Σ</span> Сальдо</a>
+        <a class="nav-link" asp-controller="Ledger" asp-action="Charges"><span>+</span> Начисления</a>
+        <a class="nav-link" asp-controller="Ledger" asp-action="Payments"><span>↘</span> Платежи</a>
+        <div class="nav-label">Отчеты</div>
+        <a class="nav-link" asp-controller="Reports" asp-action="Turnover"><span>▦</span> Оборотная ведомость</a>
+        <a class="nav-link" asp-controller="Reports" asp-action="Apartment"><span>⌁</span> По квартире</a>
+        <a class="nav-link" asp-controller="Reports" asp-action="Debtors"><span>!</span> Должники</a>
+        <div class="sidebar-foot">Лабораторная работа №3<br><small>ASP.NET Core + PostgreSQL</small></div>
+    </aside>
+    <main class="content">
+        <header class="topbar"><div><span class="eyebrow">Расчетная система</span><h1>@ViewData["Title"]</h1></div><div class="clock" id="clock"></div></header>
+        @if (TempData["ok"] is string ok) { <div class="notice success">@ok</div> }
+        @if (TempData["error"] is string error) { <div class="notice danger">@error</div> }
+        @RenderBody()
+    </main>
+</div>
+<script src="~/js/site.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

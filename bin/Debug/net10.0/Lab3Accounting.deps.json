@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Lab3Accounting/1.0.0": {
+        "dependencies": {
+          "Npgsql": "8.0.9"
+        },
+        "runtime": {
+          "Lab3Accounting.dll": {}
+        }
+      },
+      "Npgsql/8.0.9": {
+        "runtime": {
+          "lib/net8.0/Npgsql.dll": {
+            "assemblyVersion": "8.0.9.0",
+            "fileVersion": "8.0.9.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Lab3Accounting/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Npgsql/8.0.9": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-H7O9NrvSO+BaojUOK59YmSOi7+RabnBoNPw1F7NgtZhw5uBeAA3bCjTH2VjgacUVHe8K1asPyj/a/mnhJ/e1yA==",
+      "path": "npgsql/8.0.9",
+      "hashPath": "npgsql.8.0.9.nupkg.sha512"
+    }
+  }
+}
