@@ -194,7 +194,7 @@ rows AS (
                           + COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.apartment_number=a.apartment_number AND p.period > make_date(p_year,m.month_no,1) AND p.period < s2.period),0)
              FROM saldo s2
              WHERE s2.apartment_number=a.apartment_number AND s2.period > make_date(p_year,m.month_no,1)
-             ORDER BY s2.period ASC LIMIT 1) AS chain_closing_next,
+             ORDER BY s2.period ASC LIMIT 1) AS chain_closing_next
     FROM apartments a CROSS JOIN months m
     LEFT JOIN saldo s ON s.apartment_number=a.apartment_number AND s.period=make_date(p_year,m.month_no,1)
 ),
@@ -321,7 +321,7 @@ SELECT month_no, month_start, opening_balance, charges_total, payments_total, cl
                                         THEN total_before
                                         ELSE total_before - (charges_total - payments_total) END,
                     0)
-           + charges_total - payments_total, 2)::NUMERIC(14,2)
+           + charges_total - payments_total, 2)::NUMERIC(14,2) AS calc_closing
 FROM calc
 ORDER BY month_no;
 $$;
