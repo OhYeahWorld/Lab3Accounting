@@ -11,6 +11,8 @@ public sealed class TurnoverRow
     public decimal PaymentsTotal { get; set; }
     public decimal? ClosingBalance { get; set; }
     public DateTimeOffset? ActionAt { get; set; }
+    public decimal CalcOpeningBalance { get; set; }
+    public decimal CalcClosingBalance { get; set; }
 }
 
 public sealed class ApartmentRow
@@ -22,6 +24,8 @@ public sealed class ApartmentRow
     public decimal PaymentsTotal { get; set; }
     public decimal? ClosingBalance { get; set; }
     public DateTimeOffset? ActionAt { get; set; }
+    public decimal CalcOpeningBalance { get; set; }
+    public decimal CalcClosingBalance { get; set; }
 }
 
 public sealed class DebtorRow

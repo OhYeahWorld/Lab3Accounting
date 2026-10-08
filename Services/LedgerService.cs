@@ -59,19 +59,20 @@ public sealed class LedgerService
     {
         await using var db = await OpenAsync();
         await using var cmd = new NpgsqlCommand(@"
-            SELECT id, apartment_number, period, payment_date, amount, payment_reference, created_at, updated_at
+            SELECT id, apartment_number, period, payment_date, payment_time, amount, payment_reference, created_at, updated_at
             FROM payments
             WHERE CAST(@apartment AS integer) IS NULL OR apartment_number = CAST(@apartment AS integer)
-            ORDER BY payment_date DESC, apartment_number, id DESC;", db);
+            ORDER BY payment_date DESC, payment_time DESC, apartment_number, id DESC;", db);
         cmd.Parameters.Add("apartment", NpgsqlDbType.Integer).Value = apartment.HasValue ? apartment.Value : DBNull.Value;
         var result = new List<Payment>();
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync()) result.Add(new Payment
         {
             Id = reader.GetInt64(0), ApartmentNumber = reader.GetInt32(1), Period = reader.GetFieldValue<DateOnly>(2),
-            PaymentDate = reader.GetFieldValue<DateOnly>(3), Amount = reader.GetDecimal(4),
-            PaymentReference = reader.IsDBNull(5) ? null : reader.GetString(5),
-            CreatedAt = reader.GetFieldValue<DateTimeOffset>(6), UpdatedAt = reader.GetFieldValue<DateTimeOffset>(7)
+            PaymentDate = reader.GetFieldValue<DateOnly>(3), PaymentTime = reader.GetFieldValue<TimeOnly>(4),
+            Amount = reader.GetDecimal(5),
+            PaymentReference = reader.IsDBNull(6) ? null : reader.GetString(6),
+            CreatedAt = reader.GetFieldValue<DateTimeOffset>(7), UpdatedAt = reader.GetFieldValue<DateTimeOffset>(8)
         });
         return result;
     }
@@ -183,6 +184,8 @@ public sealed class LedgerService
         if (form.Amount <= 0) throw new InvalidOperationException("Сумма платежа должна быть больше нуля.");
         if (form.PaymentDate < form.Period || form.PaymentDate >= form.Period.AddMonths(1))
             throw new InvalidOperationException("Дата платежа должна относиться к выбранному месяцу.");
+        // Время платежа: если не указано — берем текущее время.
+        form.PaymentTime ??= TimeOnly.FromDateTime(DateTime.Now);
         if (string.IsNullOrWhiteSpace(form.PaymentReference)) form.PaymentReference = null;
         await using var db = await OpenAsync();
         await using var tx = await db.BeginTransactionAsync();
@@ -191,14 +194,14 @@ public sealed class LedgerService
             await EnsurePaymentUniqueAsync(db, tx, form);
             if (form.Id is null)
             {
-                await using var cmd = new NpgsqlCommand(@"INSERT INTO payments(apartment_number,period,payment_date,amount,payment_reference) VALUES(@apartment,@period,@paymentDate,@amount,@reference);", db, tx);
-                Add(cmd,"apartment",form.ApartmentNumber); Add(cmd,"period",form.Period); Add(cmd,"paymentDate",form.PaymentDate); Add(cmd,"amount",form.Amount); Add(cmd,"reference",(object?)form.PaymentReference ?? DBNull.Value);
+                await using var cmd = new NpgsqlCommand(@"INSERT INTO payments(apartment_number,period,payment_date,payment_time,amount,payment_reference) VALUES(@apartment,@period,@paymentDate,@paymentTime,@amount,@reference);", db, tx);
+                Add(cmd,"apartment",form.ApartmentNumber); Add(cmd,"period",form.Period); Add(cmd,"paymentDate",form.PaymentDate); Add(cmd,"paymentTime",form.PaymentTime.Value); Add(cmd,"amount",form.Amount); Add(cmd,"reference",(object?)form.PaymentReference ?? DBNull.Value);
                 await cmd.ExecuteNonQueryAsync();
             }
             else
             {
-                await using var cmd = new NpgsqlCommand(@"UPDATE payments SET apartment_number=@apartment,period=@period,payment_date=@paymentDate,amount=@amount,payment_reference=@reference WHERE id=@id;", db, tx);
-                Add(cmd,"id",form.Id.Value); Add(cmd,"apartment",form.ApartmentNumber); Add(cmd,"period",form.Period); Add(cmd,"paymentDate",form.PaymentDate); Add(cmd,"amount",form.Amount); Add(cmd,"reference",(object?)form.PaymentReference ?? DBNull.Value);
+                await using var cmd = new NpgsqlCommand(@"UPDATE payments SET apartment_number=@apartment,period=@period,payment_date=@paymentDate,payment_time=@paymentTime,amount=@amount,payment_reference=@reference WHERE id=@id;", db, tx);
+                Add(cmd,"id",form.Id.Value); Add(cmd,"apartment",form.ApartmentNumber); Add(cmd,"period",form.Period); Add(cmd,"paymentDate",form.PaymentDate); Add(cmd,"paymentTime",form.PaymentTime.Value); Add(cmd,"amount",form.Amount); Add(cmd,"reference",(object?)form.PaymentReference ?? DBNull.Value);
                 if (await cmd.ExecuteNonQueryAsync() == 0) throw new KeyNotFoundException("Платеж не найден.");
             }
             await RebuildSaldoChainAsync(db, tx, form.ApartmentNumber);
@@ -264,7 +267,8 @@ public sealed class LedgerService
         {
             ApartmentNumber=r.GetInt32(0), YearOpening=r.IsDBNull(1)?null:r.GetDecimal(1), MonthNo=r.GetInt32(2), MonthStart=r.GetFieldValue<DateOnly>(3),
             OpeningBalance=r.IsDBNull(4)?null:r.GetDecimal(4), ChargesTotal=r.GetDecimal(5), PaymentsTotal=r.GetDecimal(6),
-            ClosingBalance=r.IsDBNull(7)?null:r.GetDecimal(7), ActionAt=r.IsDBNull(8)?null:r.GetFieldValue<DateTimeOffset>(8)
+            ClosingBalance=r.IsDBNull(7)?null:r.GetDecimal(7), ActionAt=r.IsDBNull(8)?null:r.GetFieldValue<DateTimeOffset>(8),
+            CalcOpeningBalance=r.GetDecimal(9), CalcClosingBalance=r.GetDecimal(10)
         });
         return list;
     }
@@ -276,7 +280,7 @@ public sealed class LedgerService
         Add(cmd,"apartment",apartment); Add(cmd,"year",year);
         var list=new List<ApartmentRow>();
         await using var r=await cmd.ExecuteReaderAsync();
-        while(await r.ReadAsync()) list.Add(new ApartmentRow{MonthNo=r.GetInt32(0),MonthStart=r.GetFieldValue<DateOnly>(1),OpeningBalance=r.IsDBNull(2)?null:r.GetDecimal(2),ChargesTotal=r.GetDecimal(3),PaymentsTotal=r.GetDecimal(4),ClosingBalance=r.IsDBNull(5)?null:r.GetDecimal(5),ActionAt=r.IsDBNull(6)?null:r.GetFieldValue<DateTimeOffset>(6)});
+        while(await r.ReadAsync()) list.Add(new ApartmentRow{MonthNo=r.GetInt32(0),MonthStart=r.GetFieldValue<DateOnly>(1),OpeningBalance=r.IsDBNull(2)?null:r.GetDecimal(2),ChargesTotal=r.GetDecimal(3),PaymentsTotal=r.GetDecimal(4),ClosingBalance=r.IsDBNull(5)?null:r.GetDecimal(5),ActionAt=r.IsDBNull(6)?null:r.GetFieldValue<DateTimeOffset>(6),CalcOpeningBalance=r.GetDecimal(7),CalcClosingBalance=r.GetDecimal(8)});
         return list;
     }
 
@@ -313,6 +317,7 @@ public sealed class LedgerService
             decimal => NpgsqlDbType.Numeric,
             int => NpgsqlDbType.Integer,
             long => NpgsqlDbType.Bigint,
+            TimeOnly => NpgsqlDbType.Time,
             string => NpgsqlDbType.Text,
             DBNull => NpgsqlDbType.Text,
             _ => NpgsqlDbType.Text
@@ -389,8 +394,8 @@ public sealed class LedgerService
 
     private static async Task EnsurePaymentUniqueAsync(NpgsqlConnection db,NpgsqlTransaction tx,PaymentForm form)
     {
-        await using var cmd=new NpgsqlCommand(@"SELECT 1 FROM payments WHERE apartment_number=@a AND period=@p AND payment_date=@d AND amount=@amount AND (@id IS NULL OR id<>@id) LIMIT 1;",db,tx);
-        Add(cmd,"a",form.ApartmentNumber);Add(cmd,"p",form.Period);Add(cmd,"d",form.PaymentDate);Add(cmd,"amount",form.Amount);AddNullable(cmd,"id", NpgsqlDbType.Bigint, form.Id);
+        await using var cmd=new NpgsqlCommand(@"SELECT 1 FROM payments WHERE apartment_number=@a AND period=@p AND payment_date=@d AND payment_time=@t AND amount=@amount AND (@id IS NULL OR id<>@id) LIMIT 1;",db,tx);
+        Add(cmd,"a",form.ApartmentNumber);Add(cmd,"p",form.Period);Add(cmd,"d",form.PaymentDate);Add(cmd,"t",form.PaymentTime!.Value);Add(cmd,"amount",form.Amount);AddNullable(cmd,"id", NpgsqlDbType.Bigint, form.Id);
         if(await cmd.ExecuteScalarAsync() is not null) throw new InvalidOperationException("Платеж с такими же данными уже есть в базе.");
         if(!string.IsNullOrWhiteSpace(form.PaymentReference))
         {
